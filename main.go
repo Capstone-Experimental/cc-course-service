@@ -1,0 +1,25 @@
+package main
+
+import (
+	"cc-course-service/db"
+	"cc-course-service/middleware"
+	"cc-course-service/repo"
+	"cc-course-service/route"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func main() {
+	app := fiber.New()
+
+	db.InitDatabase()
+
+	courseRepo := repo.NewCourseRepository(db.DB)
+	feedbackRepo := repo.NewFeedbackRepository(db.DB)
+
+	app.Use(middleware.JWTProtected())
+
+	route.InitRoutes(app, *courseRepo, *feedbackRepo)
+
+	app.Listen(":8081")
+}
