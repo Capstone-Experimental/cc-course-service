@@ -17,8 +17,8 @@ func main() {
 	courseRepo := repo.NewCourseRepository(db.DB)
 	feedbackRepo := repo.NewFeedbackRepository(db.DB)
 
-	app.Use(middleware.JWTProtected())
-
+	// app.Use(middleware.JWTProtected())
+	app.Use(middleware.FirebaseAuth())
 	route.InitRoutes(app, *courseRepo, *feedbackRepo)
 
 	app.Listen(":8081")

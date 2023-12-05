@@ -180,3 +180,7 @@ func (handler *CourseHandler) MarkAsDoneHandler(c *fiber.Ctx) error {
 
 	return helper.Response(c, 200, "Subtopic marked as done", nil)
 }
+
+func (handler *CourseHandler) TestFirebase(c *fiber.Ctx) error {
+	return helper.Response(c, 200, "Success", nil)
+}

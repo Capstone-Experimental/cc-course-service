@@ -11,7 +11,7 @@ func InitRoutes(app *fiber.App, courseRepo repo.CourseRepository, feedbackRepo r
 	courseHandler := handler.NewCourseHandler(courseRepo)
 
 	courseRoutes := app.Group("/api/v1/course")
-
+	courseRoutes.Get("/test", courseHandler.TestFirebase)
 	courseRoutes.Get("/", courseHandler.GetAllCourseHandler)
 	courseRoutes.Get("/:id", courseHandler.GetCourseByIdHandler)
 	courseRoutes.Post("/create", courseHandler.CreateCourseHandler)

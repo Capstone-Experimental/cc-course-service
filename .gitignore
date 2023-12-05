@@ -21,3 +21,4 @@
 go.work
 .DS_Store
 course.db
+cred.json
