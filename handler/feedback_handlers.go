@@ -25,11 +25,24 @@ func (handler *FeedbackHandler) CreateFeedbackHandler(c *fiber.Ctx) error {
 
 	courseId := c.Params("course_id")
 
-	token := c.Get("Authorization")
-	token = token[len("Bearer "):]
-	claims, err := helper.VerifyToken(token)
-	if err != nil {
+	// JWT auth
+	// token := c.Get("Authorization")
+	// token = token[len("Bearer "):]
+	// claims, err := helper.VerifyToken(token)
+	// if err != nil {
+	// 	return helper.Response(c, 401, "Unauthorized", nil)
+	// }
+	// var userID = claims.Id
+
+	// Firebase auth
+	claims, ok := c.Locals("claims").(map[string]interface{})
+	if !ok {
 		return helper.Response(c, 401, "Unauthorized", nil)
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return helper.Response(c, 500, "Internal Server Error", nil)
 	}
 
 	var raw model.FeedbackRaw
@@ -43,7 +56,7 @@ func (handler *FeedbackHandler) CreateFeedbackHandler(c *fiber.Ctx) error {
 
 	feedback := model.Feedback{
 		ID:       uuid.New(),
-		UserId:   claims.Id,
+		UserId:   userID,
 		CourseId: courseId,
 		Feedback: raw.Feedback,
 		Rating:   raw.Rating,
@@ -53,7 +66,7 @@ func (handler *FeedbackHandler) CreateFeedbackHandler(c *fiber.Ctx) error {
 		tx.Rollback()
 		return err
 	}
-	if err != nil {
+	if !ok {
 		return helper.Response(c, 500, "Internal Server Error", nil)
 	}
 

@@ -16,9 +16,29 @@ func NewCourseRepository(db *gorm.DB) *CourseRepository {
 	}
 }
 
-func (repo *CourseRepository) GetAll() ([]model.Course, error) {
+// get all courses according to user id
+func (repo *CourseRepository) GetAll(uid string, offset, pageSize int) ([]model.Course, error) {
+
+	if offset > 0 && pageSize > 0 {
+		// Query for the current page of items
+		rows, err := repo.Db.Raw("SELECT * FROM courses WHERE user_id = ? LIMIT ? OFFSET ?", uid, pageSize, offset).Rows()
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var courses []model.Course
+		for rows.Next() {
+			var course model.Course
+			repo.Db.ScanRows(rows, &course)
+			courses = append(courses, course)
+		}
+
+		return courses, nil
+	}
+
 	var courses []model.Course
-	result := repo.Db.Find(&courses)
+	result := repo.Db.Where("user_id = ?", uid).Find(&courses)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -26,6 +46,7 @@ func (repo *CourseRepository) GetAll() ([]model.Course, error) {
 	return courses, nil
 }
 
+// get course by id
 func (repo *CourseRepository) GetCourseByID(id string) (*map[string]interface{}, error) {
 	var result = map[string]interface{}{}
 
@@ -35,7 +56,10 @@ func (repo *CourseRepository) GetCourseByID(id string) (*map[string]interface{},
 	result["id"] = course.ID
 	result["title"] = course.Title
 	result["desc"] = course.Desc
+	result["type"] = course.Type
+	result["theme"] = course.Theme
 	result["duration"] = course.Duration
+	result["is_done"] = course.IsDone
 
 	var subtopics []model.Subtopic
 	repo.Db.Where("course_id = ?", id).Find(&subtopics)
@@ -52,20 +76,15 @@ func (repo *CourseRepository) GetCourseByID(id string) (*map[string]interface{},
 			var steps []model.Step
 			repo.Db.Where("content_id = ?", content.ID).Find(&steps)
 
-			// var stepMaps []map[string]interface{}
 			var stepMaps []string
 
 			for _, step := range steps {
-				// var stepMap = map[string]interface{}{}
-				// stepMap["id"] = step.ID
-				// stepMap["step"] = step.Step
 				var stepText = step.Step
 
 				stepMaps = append(stepMaps, stepText)
 			}
 
 			var contentMap = map[string]interface{}{}
-			// contentMap["id"] = content.ID
 			contentMap["opening"] = content.Opening
 			contentMap["steps"] = stepMaps
 			contentMap["closing"] = content.Closing
@@ -100,12 +119,21 @@ func (repo *CourseRepository) MarkSubtopicAsDone(id string) error {
 	var subtopics []model.Subtopic
 	repo.Db.Where("course_id = ?", course.ID).Find(&subtopics)
 
+	var subtopicMarkedAsDone float32 = 0
+
 	var isDone = true
 	for _, subtopic := range subtopics {
 		if !subtopic.IsDone {
 			isDone = false
+		} else {
+			subtopicMarkedAsDone++
 		}
 	}
+
+	//auto update progress according to subtopic marked as done (done subtopic / total subtopic)
+	var progress = subtopicMarkedAsDone / float32(len(subtopics)) * 100
+
+	repo.Db.Model(&course).Update("progress", progress)
 
 	if isDone {
 		repo.Db.Model(&course).Update("is_done", true)

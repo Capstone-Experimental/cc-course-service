@@ -7,11 +7,11 @@ import (
 	"cc-course-service/repo"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	//unofficial openai go client
 )
 
 type CourseHandler struct {
@@ -31,11 +31,24 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 		return helper.Response(c, 400, "Error Parsing the Body", nil)
 	}
 
-	token := c.Get("Authorization")
-	token = token[len("Bearer "):]
-	claims, err := helper.VerifyToken(token)
-	if err != nil {
+	// JWT auth
+	// token := c.Get("Authorization")
+	// token = token[len("Bearer "):]
+	// claims, err := helper.VerifyToken(token)
+	// if err != nil {
+	// 	return helper.Response(c, 401, "Unauthorized", nil)
+	// }
+	// var userID = claims.Id
+
+	// Firebase auth
+	claims, ok := c.Locals("claims").(map[string]interface{})
+	if !ok {
 		return helper.Response(c, 401, "Unauthorized", nil)
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return helper.Response(c, 500, "Internal Server Error", nil)
 	}
 
 	var responseMap map[string]interface{}
@@ -59,17 +72,18 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 	desc := responseMap["desc"].(string)
 	duration := responseMap["duration"].(string)
 	theme := responseMap["theme_activity"].(string)
-	typeA := responseMap["type_activity"].(string)
+	courseType := responseMap["type_activity"].(string)
 
 	courseID := uuid.New()
 	course := model.Course{
 		ID:        courseID,
-		UserID:    claims.Id,
+		UserID:    userID,
 		Title:     title,
 		Desc:      desc,
 		Duration:  duration,
 		Theme:     theme,
-		Type:      typeA,
+		Type:      courseType,
+		Progress:  0,
 		IsDone:    false,
 		CreatedAt: helper.GetCurrentTime(),
 		Prompt:    raw.Prompt,
@@ -148,10 +162,35 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 }
 
 func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
-	courses, err := handler.Repo.GetAll()
-
+	token := c.Get("Authorization")
+	token = token[len("Bearer "):]
+	claims, err := helper.VerifyToken(token)
 	if err != nil {
-		return helper.Response(c, 400, "Course not found", nil)
+		return helper.Response(c, 401, "Unauthorized", nil)
+	}
+
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil || page < 1 {
+		page = 0
+	}
+
+	pageSize, err := strconv.Atoi(c.Query("page_size"))
+	if err != nil || pageSize < 1 {
+		pageSize = 0
+	}
+
+	courses, err := handler.Repo.GetAll(claims.Id, page, pageSize)
+	if err != nil {
+		return helper.Response(c, 400, "Courses not found", nil)
+	}
+
+	if page > 0 && pageSize > 0 {
+		paginated, err := helper.Paginate(c, page, pageSize, courses)
+		if err != nil {
+			return helper.Response(c, 400, "Courses not found", nil)
+		}
+
+		return helper.Response(c, 200, "Course found", paginated)
 	}
 
 	return helper.Response(c, 200, "Course found", courses)

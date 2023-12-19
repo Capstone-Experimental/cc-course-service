@@ -16,10 +16,12 @@ func main() {
 
 	courseRepo := repo.NewCourseRepository(db.DB)
 	feedbackRepo := repo.NewFeedbackRepository(db.DB)
+	dashboardRepo := repo.NewDashboardRepository(db.DB)
 
-	app.Use(middleware.JWTProtected())
+	// app.Use(middleware.JWTProtected())
+	app.Use(middleware.FirebaseAuth())
 
-	route.InitRoutes(app, *courseRepo, *feedbackRepo)
+	route.InitRoutes(app, *courseRepo, *feedbackRepo, *dashboardRepo)
 
 	app.Listen(":8081")
 }

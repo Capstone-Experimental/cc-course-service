@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func InitRoutes(app *fiber.App, courseRepo repo.CourseRepository, feedbackRepo repo.FeedbackRepository) {
+func InitRoutes(app *fiber.App, courseRepo repo.CourseRepository, feedbackRepo repo.FeedbackRepository, dashboardRepo repo.DashboardRepository) {
 	courseHandler := handler.NewCourseHandler(courseRepo)
 
 	courseRoutes := app.Group("/api/v1/course")
@@ -22,4 +22,10 @@ func InitRoutes(app *fiber.App, courseRepo repo.CourseRepository, feedbackRepo r
 	feedbackRoutes := app.Group("/api/v1/feedback")
 
 	feedbackRoutes.Post("/:course_id", feedbackHandler.CreateFeedbackHandler)
+
+	dashboardHandler := handler.NewDashboardHandler(dashboardRepo)
+
+	dashboardRoutes := app.Group("/api/v1/dashboard")
+
+	dashboardRoutes.Get("/", dashboardHandler.GetDashboard)
 }

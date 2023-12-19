@@ -8,9 +8,9 @@ import (
 
 type Feedback struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserId    string
-	CourseId  string
-	Feedback  string
-	Rating    float32
-	CreatedAt time.Time
+	UserId    string    `json:"user_id"`
+	CourseId  string    `json:"course_id"`
+	Feedback  string    `json:"feedback"`
+	Rating    float32   `json:"rating" gorm:"type:numeric(2,1)"`
+	CreatedAt time.Time `json:"created_at"`
 }
