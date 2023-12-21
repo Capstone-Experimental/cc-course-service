@@ -162,13 +162,6 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 }
 
 func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
-	token := c.Get("Authorization")
-	token = token[len("Bearer "):]
-	claims, err := helper.VerifyToken(token)
-	if err != nil {
-		return helper.Response(c, 401, "Unauthorized", nil)
-	}
-
 	page, err := strconv.Atoi(c.Query("page"))
 	if err != nil || page < 1 {
 		page = 0
@@ -179,7 +172,54 @@ func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
 		pageSize = 0
 	}
 
-	courses, err := handler.Repo.GetAll(claims.Id, page, pageSize)
+	courses, err := handler.Repo.GetAll(page, pageSize)
+	if err != nil {
+		return helper.Response(c, 400, "Courses not found", nil)
+	}
+
+	if page > 0 && pageSize > 0 {
+		paginated, err := helper.Paginate(c, page, pageSize, courses)
+		if err != nil {
+			return helper.Response(c, 400, "Courses not found", nil)
+		}
+
+		return helper.Response(c, 200, "Course found", paginated)
+	}
+
+	return helper.Response(c, 200, "Course found", courses)
+}
+
+func (handler *CourseHandler) MyCourseHandler(c *fiber.Ctx) error {
+	// JWT auth
+	// token := c.Get("Authorization")
+	// token = token[len("Bearer "):]
+	// claims, err := helper.VerifyToken(token)
+	// if err != nil {
+	// 	return helper.Response(c, 401, "Unauthorized", nil)
+	// }
+	// var userID = claims.Id
+
+	// Firebase auth
+	claims, ok := c.Locals("claims").(map[string]interface{})
+	if !ok {
+		return helper.Response(c, 401, "Unauthorized", nil)
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return helper.Response(c, 500, "Internal Server Error", nil)
+	}
+	page, err := strconv.Atoi(c.Query("page"))
+	if err != nil || page < 1 {
+		page = 0
+	}
+
+	pageSize, err := strconv.Atoi(c.Query("page_size"))
+	if err != nil || pageSize < 1 {
+		pageSize = 0
+	}
+
+	courses, err := handler.Repo.MyCourse(userID, page, pageSize)
 	if err != nil {
 		return helper.Response(c, 400, "Courses not found", nil)
 	}

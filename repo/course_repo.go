@@ -16,8 +16,38 @@ func NewCourseRepository(db *gorm.DB) *CourseRepository {
 	}
 }
 
+// get all courses
+func (repo *CourseRepository) GetAll(offset, pageSize int) ([]model.Course, error) {
+
+	if offset > 0 && pageSize > 0 {
+		// Query for the current page of items
+		rows, err := repo.Db.Raw("SELECT * FROM courses LIMIT ? OFFSET ?", pageSize, offset).Rows()
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var courses []model.Course
+		for rows.Next() {
+			var course model.Course
+			repo.Db.ScanRows(rows, &course)
+			courses = append(courses, course)
+		}
+
+		return courses, nil
+	}
+
+	var courses []model.Course
+	result := repo.Db.Find(&courses)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return courses, nil
+}
+
 // get all courses according to user id
-func (repo *CourseRepository) GetAll(uid string, offset, pageSize int) ([]model.Course, error) {
+func (repo *CourseRepository) MyCourse(uid string, offset, pageSize int) ([]model.Course, error) {
 
 	if offset > 0 && pageSize > 0 {
 		// Query for the current page of items

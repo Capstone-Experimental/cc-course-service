@@ -10,12 +10,13 @@ import (
 func InitRoutes(app *fiber.App, courseRepo repo.CourseRepository, feedbackRepo repo.FeedbackRepository, dashboardRepo repo.DashboardRepository) {
 	courseHandler := handler.NewCourseHandler(courseRepo)
 
-	courseRoutes := app.Group("/api/v1/course")
+	courseRoutes := app.Group("/api/v1")
 
 	courseRoutes.Get("/", courseHandler.GetAllCourseHandler)
-	courseRoutes.Get("/:id", courseHandler.GetCourseByIdHandler)
+	courseRoutes.Get("/my-course", courseHandler.MyCourseHandler)
+	courseRoutes.Get("/course/:id", courseHandler.GetCourseByIdHandler)
 	courseRoutes.Post("/create", courseHandler.CreateCourseHandler)
-	courseRoutes.Put("/:id", courseHandler.MarkAsDoneHandler)
+	courseRoutes.Put("/subtitle/:id", courseHandler.MarkAsDoneHandler)
 
 	feedbackHandler := handler.NewFeedbackHandler(feedbackRepo)
 
