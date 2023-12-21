@@ -16,6 +16,7 @@ func NewDashboardRepository(db *gorm.DB) *DashboardRepository {
 	}
 }
 
+// get dashboard according to user id
 func (repo *DashboardRepository) GetDashboard(uid string) (*model.Dashboard, error) {
 	var dashboard model.Dashboard
 

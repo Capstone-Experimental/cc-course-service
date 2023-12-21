@@ -18,6 +18,7 @@ func main() {
 	feedbackRepo := repo.NewFeedbackRepository(db.DB)
 	dashboardRepo := repo.NewDashboardRepository(db.DB)
 
+	// Auth middleware uncomment one of these, you might need to do the same in handler and/or repo
 	// app.Use(middleware.JWTProtected())
 	app.Use(middleware.FirebaseAuth())
 

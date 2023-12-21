@@ -17,6 +17,7 @@ func NewDashboardHandler(repo repo.DashboardRepository) *DashboardHandler {
 	}
 }
 
+// GetDashboard handles GET /dashboard
 func (handler *DashboardHandler) GetDashboard(c *fiber.Ctx) error {
 	// JWT auth
 	// token := c.Get("Authorization")

@@ -24,6 +24,7 @@ func NewCourseHandler(repo repo.CourseRepository) *CourseHandler {
 	}
 }
 
+// CreateCourseHandler handles POST /course
 func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 	tx := db.DB.Begin()
 	var raw model.CourseRaw
@@ -51,6 +52,8 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 		return helper.Response(c, 500, "Internal Server Error", nil)
 	}
 
+	// since the course is a json string, we need to decode it first
+	// then unmarshal it to the defined model
 	var responseMap map[string]interface{}
 	decoder := json.NewDecoder(strings.NewReader(raw.Course))
 	decoder.DisallowUnknownFields()
@@ -161,6 +164,7 @@ func (handler *CourseHandler) CreateCourseHandler(c *fiber.Ctx) error {
 			"course_id": courseID})
 }
 
+// GetAllCourseHandler handles GET /course
 func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
 	page, err := strconv.Atoi(c.Query("page"))
 	if err != nil || page < 1 {
@@ -178,7 +182,7 @@ func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
 	}
 
 	if page > 0 && pageSize > 0 {
-		paginated, err := helper.Paginate(c, page, pageSize, courses)
+		paginated, err := helper.CoursePaginate(c, page, pageSize, courses)
 		if err != nil {
 			return helper.Response(c, 400, "Courses not found", nil)
 		}
@@ -189,6 +193,7 @@ func (handler *CourseHandler) GetAllCourseHandler(c *fiber.Ctx) error {
 	return helper.Response(c, 200, "Course found", courses)
 }
 
+// MyCourseHandler handles GET /my-course
 func (handler *CourseHandler) MyCourseHandler(c *fiber.Ctx) error {
 	// JWT auth
 	// token := c.Get("Authorization")
@@ -225,7 +230,7 @@ func (handler *CourseHandler) MyCourseHandler(c *fiber.Ctx) error {
 	}
 
 	if page > 0 && pageSize > 0 {
-		paginated, err := helper.Paginate(c, page, pageSize, courses)
+		paginated, err := helper.CoursePaginate(c, page, pageSize, courses)
 		if err != nil {
 			return helper.Response(c, 400, "Courses not found", nil)
 		}
@@ -236,6 +241,7 @@ func (handler *CourseHandler) MyCourseHandler(c *fiber.Ctx) error {
 	return helper.Response(c, 200, "Course found", courses)
 }
 
+// GetCourseByIdHandler handles GET /course/:id
 func (handler *CourseHandler) GetCourseByIdHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -248,6 +254,7 @@ func (handler *CourseHandler) GetCourseByIdHandler(c *fiber.Ctx) error {
 	return helper.Response(c, 200, "Course found", course)
 }
 
+// MarkAsDoneHandler handles PUT /subtitle/:id
 func (handler *CourseHandler) MarkAsDoneHandler(c *fiber.Ctx) error {
 	id := c.Params("id")
 
